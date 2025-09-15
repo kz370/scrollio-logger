@@ -1,10 +1,8 @@
 <?php
-
 namespace Kz370\ScollioLogger\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
 use Kz370\ScollioLogger\Models\LogEntry;
 
 class LogDashboardController extends Controller
@@ -33,27 +31,52 @@ class LogDashboardController extends Controller
         }
 
         $logs = $query->orderBy('created_at', 'desc')->paginate(
-            config('scollio-logger.pagination', 15)
+            config('scollio-logger.dashboard.pagination', 15)
         );
 
-        $levels = ['emergency','alert','critical','error','warning','notice','info','debug'];
+        $levels   = ['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug'];
         $channels = LogEntry::select('channel')->distinct()->pluck('channel');
 
-        return view('scollio-logger::dashboard', compact('logs', 'levels', 'channels'));
+        $theme  = config('scollio-logger.dashboard.theme', 'auto');
+        $colors = config('scollio-logger.colors', [
+            'emergency' => 'bg-red-900 text-white',
+            'alert'     => 'bg-red-700 text-white',
+            'critical'  => 'bg-red-600 text-white',
+            'error'     => 'bg-red-500 text-white',
+            'warning'   => 'bg-yellow-400 text-black',
+            'notice'    => 'bg-blue-200 text-black',
+            'info'      => 'bg-blue-500 text-white',
+            'debug'     => 'bg-gray-200 text-black',
+        ]);
+        return view('scollio-logger::dashboard', ['showSingle' => true, 'logs' => $logs, 'levels' => $levels, 'channels' => $channels, 'theme' => $theme, 'colors' => $colors]);
     }
 
     public function show($id)
     {
-        $log = LogEntry::findOrFail($id);
-        $levels = ['emergency','alert','critical','error','warning','notice','info','debug'];
+        $log      = LogEntry::findOrFail($id);
+        $levels   = ['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug'];
         $channels = LogEntry::select('channel')->distinct()->pluck('channel');
+
+        $theme  = config('scollio-logger.dashboard.theme', 'auto');
+        $colors = config('scollio-logger.colors', [
+            'emergency' => 'bg-red-900 text-white',
+            'alert'     => 'bg-red-700 text-white',
+            'critical'  => 'bg-red-600 text-white',
+            'error'     => 'bg-red-500 text-white',
+            'warning'   => 'bg-yellow-400 text-black',
+            'notice'    => 'bg-blue-200 text-black',
+            'info'      => 'bg-blue-500 text-white',
+            'debug'     => 'bg-gray-200 text-black',
+        ]);
 
         return view('scollio-logger::dashboard', [
             'showSingle' => true,
-            'log' => $log,
-            'levels' => $levels,
-            'channels' => $channels,
-            'logs' => collect(), // empty list when showing single
+            'log'        => $log,
+            'levels'     => $levels,
+            'channels'   => $channels,
+            'theme'      => $theme,
+            'colors'     => $colors,
+            'logs'       => collect(), // empty list when showing single
         ]);
     }
 

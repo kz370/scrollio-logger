@@ -1,22 +1,21 @@
 <?php
-
 namespace Kz370\ScollioLogger\Logger;
 
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Request;
 use Kz370\ScollioLogger\Models\LogEntry;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Request;
+use Carbon\Carbon;
 
 class ScollioLogger implements LoggerInterface
 {
     public function log($level, $message, array $context = [], ?string $location = null, string $channel = 'default'): void
     {
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+        $trace  = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
         $caller = $trace[1] ?? [];
 
-        $resolvedLocation = $location
-            ?? ($context['location'] ?? (($caller['class'] ?? '') . ($caller['type'] ?? '') . ($caller['function'] ?? '')));
+        $resolvedLocation = $location ?? ($context['location'] ?? (($caller['class'] ?? '') . ($caller['type'] ?? '') . ($caller['function'] ?? '')));
 
         $file = $caller['file'] ?? null;
         $line = $caller['line'] ?? null;
@@ -34,30 +33,61 @@ class ScollioLogger implements LoggerInterface
             'user_id'    => Auth::id(),
             'created_at' => now(),
         ]);
+        
+        if (rand(1, 100) === 1) { // 1% chance on each log
+            $this->cleanup();
+        }
     }
 
-    public function emergency($message, $location = null, array $context = [], string $channel = 'default'): void { 
-        $this->log(LogLevel::EMERGENCY, $message, $context, $location, $channel); 
+    protected function cleanup(): void
+    {
+        $retentionDays = config('scollio-logger.retention_days');
+
+        if (! $retentionDays) {
+            return;
+        }
+
+        $cutoffDate = Carbon::now()->subDays($retentionDays);
+        LogEntry::where('created_at', '<', $cutoffDate)->delete();
     }
-    public function alert($message, $location = null, array $context = [], string $channel = 'default'): void { 
-        $this->log(LogLevel::ALERT, $message, $context, $location, $channel); 
+
+    public function emergency($message, array $context = [], ?string $location = null, string $channel = 'default'): void
+    {
+        $this->log(LogLevel::EMERGENCY, $message, $context, $location, $channel);
     }
-    public function critical($message, $location = null, array $context = [], string $channel = 'default'): void { 
-        $this->log(LogLevel::CRITICAL, $message, $context, $location, $channel); 
+
+    public function alert($message, array $context = [], ?string $location = null, string $channel = 'default'): void
+    {
+        $this->log(LogLevel::ALERT, $message, $context, $location, $channel);
     }
-    public function error($message, $location = null, array $context = [], string $channel = 'default'): void { 
-        $this->log(LogLevel::ERROR, $message, $context, $location, $channel); 
+
+    public function critical($message, array $context = [], ?string $location = null, string $channel = 'default'): void
+    {
+        $this->log(LogLevel::CRITICAL, $message, $context, $location, $channel);
     }
-    public function warning($message, $location = null, array $context = [], string $channel = 'default'): void { 
-        $this->log(LogLevel::WARNING, $message, $context, $location, $channel); 
+
+    public function error($message, array $context = [], ?string $location = null, string $channel = 'default'): void
+    {
+        $this->log(LogLevel::ERROR, $message, $context, $location, $channel);
     }
-    public function notice($message, $location = null, array $context = [], string $channel = 'default'): void { 
-        $this->log(LogLevel::NOTICE, $message, $context, $location, $channel); 
+
+    public function warning($message, array $context = [], ?string $location = null, string $channel = 'default'): void
+    {
+        $this->log(LogLevel::WARNING, $message, $context, $location, $channel);
     }
-    public function info($message, $location = null, array $context = [], string $channel = 'default'): void { 
-        $this->log(LogLevel::INFO, $message, $context, $location, $channel); 
+
+    public function notice($message, array $context = [], ?string $location = null, string $channel = 'default'): void
+    {
+        $this->log(LogLevel::NOTICE, $message, $context, $location, $channel);
     }
-    public function debug($message, $location = null, array $context = [], string $channel = 'default'): void { 
-        $this->log(LogLevel::DEBUG, $message, $context, $location, $channel); 
+
+    public function info($message, array $context = [], ?string $location = null, string $channel = 'default'): void
+    {
+        $this->log(LogLevel::INFO, $message, $context, $location, $channel);
+    }
+
+    public function debug($message, array $context = [], ?string $location = null, string $channel = 'default'): void
+    {
+        $this->log(LogLevel::DEBUG, $message, $context, $location, $channel);
     }
 }

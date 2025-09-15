@@ -7,6 +7,7 @@ return [
         'route' => 'scollio-logs/dashboard',
         'prefix' => 'scollio-logs',
         'middleware' => [
+            'auth:sanctum',
             'web'
         ],
         'pagination' => 25,
