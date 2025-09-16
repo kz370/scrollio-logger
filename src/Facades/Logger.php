@@ -1,10 +1,10 @@
 <?php
 
-namespace Kz370\ScollioLogger\Facades;
+namespace Scollio\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
-class ScollioLogger extends Facade
+class Logger extends Facade
 {
     protected static function getFacadeAccessor(): string
     {

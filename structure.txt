@@ -1,0 +1,39 @@
+scollio-logger/
+├── composer.json
+├── readme.md
+├── src/
+│   ├── LoggerServiceProvider.php
+│   ├── Facades/
+│   │   └── Logger.php
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   |   └── LogDashboardController.php
+│   │   └── Middleware/
+│   │       └── GlobalRequestLogger.php
+│   |
+│   ├── Logger/
+│   │   └── Logger.php
+│   |
+│   ├── Models/
+│   │   └── LogEntry.php
+│   |
+│   └── resources/
+│       └── views/
+│           ├── dashboard.blade.php
+│           |
+│           └── partials/
+│               └── logs-table.blade.php
+│
+├── config/
+│   └── scollio-logger.php
+│
+├── database/
+│   ├── migrations/
+│   │   └── 2025_09_15_000000_create_scollio_logs_table.php
+│   └── seeders/
+│       └── ScollioLoggerSeeder.php
+│
+└── routes/
+    └── web.php
+
+

@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Kz370\ScollioLogger\Facades\ScollioLogger;
+use Scollio\Facades\Logger;
 
 class ScollioLoggerSeeder extends Seeder
 {
@@ -48,7 +48,7 @@ class ScollioLoggerSeeder extends Seeder
                 'ip' => fake()->ipv4(),
             ];
 
-            ScollioLogger::$level($message, $context, $location);
+            Logger::$level($message, $context, $location);
         }
     }
 }
