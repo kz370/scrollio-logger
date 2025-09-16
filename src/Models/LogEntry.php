@@ -1,6 +1,6 @@
 <?php
 
-namespace Kz370\ScollioLogger\Models;
+namespace Scollio\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

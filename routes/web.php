@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Kz370\ScollioLogger\Http\Controllers\LogDashboardController;
+use Scollio\Http\Controllers\LogDashboardController;
 
 if (config('scollio-logger.dashboard.enabled', true)) {
     Route::prefix(config('scollio-logger.dashboard.route', 'scollio-logs/dashboard'))

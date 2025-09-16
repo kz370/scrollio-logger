@@ -1,14 +1,14 @@
 <?php
-namespace Kz370\ScollioLogger\Logger;
+namespace Scollio\Logger;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
-use Kz370\ScollioLogger\Models\LogEntry;
+use Scollio\Models\LogEntry;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Carbon\Carbon;
 
-class ScollioLogger implements LoggerInterface
+class Logger implements LoggerInterface
 {
     public function log($level, $message, array $context = [], ?string $location = null, string $channel = 'default'): void
     {

@@ -24,21 +24,21 @@
   },
   "autoload": {
     "psr-4": {
-      "Kz370\\ScollioLogger\\": "src/"
+      "Scollio\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Kz370\\ScollioLogger\\Tests\\": "tests/"
+      "Scollio\\Tests\\": "tests/"
     }
   },
   "extra": {
     "laravel": {
       "providers": [
-        "Kz370\\ScollioLogger\\ScollioLoggerServiceProvider"
+        "Scollio\\LoggerServiceProvider"
       ],
       "aliases": {
-        "ScollioLogger": "Kz370\\ScollioLogger\\Facades\\ScollioLogger"
+        "Logger": "Scollio\\Facades\\Logger"
       }
     }
   },
