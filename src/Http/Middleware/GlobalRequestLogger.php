@@ -43,7 +43,7 @@ class GlobalRequestLogger
         // Add dashboard routes with proper patterns
         $skipRoutes[] = $dashboardRoute;
         $skipRoutes[] = $dashboardRoute . '/*';
-        $skipRoutes[] = trim($dashboardRoute, '/') . '/*'; // Handle leading/trailing slashes
+        $skipRoutes[] = trim($dashboardRoute, '/') . '/*';
 
         if ($this->shouldSkipRoute($request, $skipRoutes)) {
             return $next($request);
@@ -58,15 +58,12 @@ class GlobalRequestLogger
         return $response;
     }
 
-
     /**
      * Check if middleware was manually assigned to this route
      */
     private function isManuallyAssigned(Request $request): bool
     {
-        // Simple check: if global is disabled but middleware runs, it's manual
-        // You could add more sophisticated detection if needed
-        return true; // If middleware runs and global is disabled, assume manual
+        return true;
     }
 
     /**
@@ -77,11 +74,20 @@ class GlobalRequestLogger
         $userId = auth()->check() ? auth()->id() : null;
         $routeName = $request->route() ? $request->route()->getName() : null;
 
+        // Extract controller and action information
+        $controllerInfo = $this->extractControllerInfo($request);
+
         $logData = [
             'type' => $isApi ? 'api' : 'web',
             'method' => $request->method(),
             'url' => $request->fullUrl(),
+            'path' => $request->path(),
             'route_name' => $routeName,
+            'controller' => $controllerInfo['controller'],
+            'action' => $controllerInfo['action'],
+            'controller_action' => $controllerInfo['controller_action'],
+            'file' => $controllerInfo['file'],
+            'line' => $controllerInfo['line'],
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'user_id' => $userId,
@@ -89,6 +95,11 @@ class GlobalRequestLogger
             'execution_time' => defined('LARAVEL_START') ?
                 round((microtime(true) - LARAVEL_START) * 1000, 2) . 'ms' : 'N/A',
         ];
+
+        // Add query parameters for GET requests
+        if ($request->isMethod('GET') && !empty($request->query())) {
+            $logData['query_params'] = $request->query();
+        }
 
         // Add payload for non-GET requests if enabled
         $config = config('scollio-logger.middleware.request_logging', []);
@@ -113,12 +124,86 @@ class GlobalRequestLogger
         $level = $this->getLogLevel($response->getStatusCode());
         $channel = 'request_logging';
 
-        Logger::$level($message, $logData, 'GlobalRequestLogger', $channel);
+        Logger::$level($message, $logData, $controllerInfo['location'], $channel);
     }
 
     /**
-     * Check if route should be skipped
+     * Extract controller and action information from the request
      */
+    private function extractControllerInfo(Request $request): array
+    {
+        $info = [
+            'controller' => null,
+            'action' => null,
+            'controller_action' => null,
+            'file' => null,
+            'line' => null,
+            'location' => 'GlobalRequestLogger',
+        ];
+
+        if (!$request->route()) {
+            return $info;
+        }
+
+        $action = $request->route()->getAction();
+
+        // Handle controller@method format
+        if (isset($action['controller'])) {
+            $controllerAction = $action['controller'];
+            $info['controller_action'] = $controllerAction;
+
+            if (str_contains($controllerAction, '@')) {
+                [$controller, $method] = explode('@', $controllerAction);
+                $info['controller'] = $controller;
+                $info['action'] = $method;
+                $info['location'] = $controllerAction;
+
+                try {
+                    $reflection = new \ReflectionClass($controller);
+                    $info['file'] = $reflection->getFileName();
+
+                    if ($reflection->hasMethod($method)) {
+                        $methodReflection = $reflection->getMethod($method);
+                        $info['line'] = $methodReflection->getStartLine();
+                    }
+                } catch (\ReflectionException $e) {
+                    // Silently handle reflection errors
+                }
+            }
+        }
+        // Handle invokable controllers
+        elseif (isset($action['uses']) && is_string($action['uses'])) {
+            $info['controller'] = $action['uses'];
+            $info['action'] = '__invoke';
+            $info['controller_action'] = $action['uses'] . '@__invoke';
+            $info['location'] = $info['controller_action'];
+
+            try {
+                $reflection = new \ReflectionClass($action['uses']);
+                $info['file'] = $reflection->getFileName();
+
+                if ($reflection->hasMethod('__invoke')) {
+                    $methodReflection = $reflection->getMethod('__invoke');
+                    $info['line'] = $methodReflection->getStartLine();
+                }
+            } catch (\ReflectionException $e) {
+                // Silently handle reflection errors
+            }
+        }
+        // Handle closures
+        elseif (isset($action['uses']) && $action['uses'] instanceof \Closure) {
+            $reflection = new \ReflectionFunction($action['uses']);
+            $info['controller'] = 'Closure';
+            $info['action'] = 'anonymous';
+            $info['controller_action'] = 'Closure';
+            $info['file'] = $reflection->getFileName();
+            $info['line'] = $reflection->getStartLine();
+            $info['location'] = 'Closure';
+        }
+
+        return $info;
+    }
+
     /**
      * Check if route should be skipped
      */
@@ -127,22 +212,18 @@ class GlobalRequestLogger
         $currentPath = $request->path();
 
         foreach ($skipRoutes as $pattern) {
-            // Handle exact matches
             if ($currentPath === trim($pattern, '/')) {
                 return true;
             }
 
-            // Handle wildcard patterns
             if ($request->is($pattern)) {
                 return true;
             }
 
-            // Handle patterns without leading slash
             if ($request->is(ltrim($pattern, '/'))) {
                 return true;
             }
 
-            // Handle route name matches (if applicable)
             if ($request->route() && $request->route()->getName()) {
                 $routeName = $request->route()->getName();
                 if (str_starts_with($routeName, 'scollio-logs.')) {
@@ -153,7 +234,6 @@ class GlobalRequestLogger
 
         return false;
     }
-
 
     /**
      * Filter sensitive data from request payload

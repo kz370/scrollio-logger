@@ -225,6 +225,11 @@
             }
         }
 
+        .text-wrap-auto {
+            text-wrap: auto;
+            white-space: pre-wrap;
+        }
+
         #paginationContainer nav p {
             margin-right: 10px;
         }
@@ -505,7 +510,7 @@
                         <i class="fas fa-code text-secondary mt-1"></i>
                         <div class="flex-1">
                             <strong class="text-primary">Context:</strong>
-                            <pre class="mt-2 solid-card p-4 rounded-lg text-sm overflow-x-auto text-primary">{{ str_replace('\/', '/', json_encode($log->context, JSON_PRETTY_PRINT)) }}</pre>
+                            <pre class="mt-2 solid-card p-4 rounded-lg text-sm overflow-x-auto text-primary text-wrap-auto">{{ str_replace('\/', '/', json_encode($log->context, JSON_PRETTY_PRINT)) }}</pre>
                         </div>
                     </div>
                 </div>
